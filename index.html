@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <title>Space Shooter Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      touch-action: none; /* Prevents default touch behaviors */
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+    /* Leaderboard styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+    }
+    
+    .modal-content {
+      position: relative;
+      background-color: #111;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #333;
+      border-radius: 10px;
+      width: 60%;
+      max-width: 500px;
+      color: white;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,255,255,0.3);
+    }
+    
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close-btn:hover {
+      color: white;
+    }
+    
+    .input-group {
+      margin: 15px 0;
+      text-align: left;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #0ff;
+    }
+    
+    input {
+      width: 95%;
+      padding: 8px;
+      margin-bottom: 10px;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 3px;
+    }
+    
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #0088ff;
+    }
+    
+    .leaderboard-table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    
+    .leaderboard-table th, .leaderboard-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    
+    .leaderboard-table th {
+      background-color: #222;
+      color: #0ff;
+    }
+    
+    .highlight {
+      background-color: rgba(0, 255, 255, 0.2);
+    }
+    
+    .error-message {
+      color: #ff6666;
+      margin: 10px 0;
+    }
+    
+    .success-message {
+      color: #66ff66;
+      margin: 10px 0;
+    }
+    
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+      /* Make the game area cover most of the screen on mobile */
+      canvas {
+        width: 100% !important;
+        height: auto !important;
+        touch-action: none;
+      }
+      
+      /* Make UI text bigger on mobile */
+      .modal-content {
+        margin: 5% auto;
+        width: 90%;
+        max-width: none;
+        padding: 15px;
+      }
+      
+      /* Adjust input fields for better touch interaction */
+      input {
+        padding: 12px;
+        font-size: 16px; /* Prevent iOS zoom on focus */
+      }
+      
+      button {
+        padding: 12px 20px;
+        font-size: 18px;
+      }
+      
+      /* Game title positioning for mobile */
+      .game-title {
+        font-size: 20px;
+        margin-top: 10px;
+        margin-bottom: 5px;
+      }
+    }
+    
+    /* Mobile controls */
+    .mobile-controls {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+      padding: 10px 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+    }
+    
+    .control-btn {
+      background-color: rgba(0, 100, 200, 0.7);
+      border: 2px solid rgba(0, 200, 255, 0.9);
+      color: white;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      font-size: 30px;
+      margin: 0;
+      position: absolute;
+      bottom: 15px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    }
+    
+    .left-btn {
+      left: 20px;
+    }
+    
+    .right-btn {
+      left: 110px;
+    }
+    
+    .shoot-btn {
+      right: 20px;
+      background-color: rgba(200, 50, 50, 0.7);
+      border-color: rgba(255, 100, 100, 0.9);
+    }
+    
+    .restart-btn {
+      background-color: rgba(50, 200, 50, 0.7);
+      border-color: rgba(100, 255, 100, 0.9);
+      right: 110px;
+      display: none;
+    }
+    
+    .control-btn:active {
+      transform: scale(0.9);
+      opacity: 0.9;
+    }
+    
+    /* Media query to always show mobile buttons in small viewports */
+    @media (max-width: 768px) {
+      .mobile-controls {
+        display: block;
+      }
+    }
+    
+    /* Add this class to body when in mobile mode */
+    body.mobile-mode .mobile-controls {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Leaderboard submission modal -->
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeLeaderboardModal()">&times;</span>
+      <h2>Submit Your Score</h2>
+      <p id="finalScoreDisplay"></p>
+      
+      <div id="submitForm">
+        <form id="scoreForm" onsubmit="submitLeaderboardScore(); return false;">
+          <div class="input-group">
+            <label for="playerEmail">Email:</label>
+            <input type="email" id="playerEmail" placeholder="Enter your email" required>
+          </div>
+          
+          <div class="input-group">
+            <label for="playerName">Name (optional):</label>
+            <input type="text" id="playerName" placeholder="Enter your name">
+          </div>
+          
+          <div class="error-message" id="errorMessage"></div>
+          
+          <button type="submit">Submit Score</button>
+        </form>
+      </div>
+      
+      <div id="leaderboardView" style="display: none;">
+        <h3>Top Scores</h3>
+        <div id="leaderboardContent"></div>
+        <button onclick="closeLeaderboardModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/sketch.js"></script>
+  
+  <script>
+    // Supabase configuration
+    // IMPORTANT: Replace with your own Supabase URL and anon key from your project
+    // You can find these values in your Supabase dashboard under Settings > API
+    const SUPABASE_URL = 'https://kgaxfdgzkupbooracmxp.supabase.co'; // Replace with your project URL
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYXhmZGd6a3VwYm9vcmFjbXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0MTIzNjYsImV4cCI6MjA1Nzk4ODM2Nn0.qTPe5cDGEyzs_rJjZnBo2fadAwzp5PTyHqHMSfY6ff4'; // Replace with your anon public key
+    
+    // Initialize Supabase when the window loads
+    window.onload = function() {
+      // Initialize Supabase with your project URL and public key
+      if (typeof supabaseClient === 'undefined') {
+        console.error('Supabase client library not loaded correctly');
+        // Try to get the library from window.supabase instead
+        if (typeof window.supabase !== 'undefined') {
+          console.log('Found Supabase client in window.supabase');
+          initSupabase(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+          console.error('Failed to find Supabase client library. Check script inclusion.');
+        }
+      } else {
+        console.log('Initializing Supabase with URL and key');
+        initSupabase(SUPABASE_URL, SUPABASE_KEY);
+      }
+    };
+    
+    // Show the leaderboard modal
+    function showLeaderboardModal(score, level) {
+      const modal = document.getElementById('leaderboardModal');
+      modal.style.display = 'block'; // Explicitly set display to 'block'
+      
+      // Adjust positioning for mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        const modalContent = document.querySelector('.modal-content');
+        modalContent.style.marginTop = '20px';
+        modalContent.style.width = '90%';
+      }
+      
+      document.getElementById('finalScoreDisplay').textContent = `Final Score: ${score} - Level: ${level}`;
+      document.getElementById('submitForm').style.display = 'block';
+      document.getElementById('leaderboardView').style.display = 'none';
+      document.getElementById('errorMessage').textContent = '';
+    }
+    
+    // Close the leaderboard modal
+    function closeLeaderboardModal() {
+      document.getElementById('leaderboardModal').style.display = 'none';
+    }
+    
+    // Show the submit form
+    function showSubmitForm() {
+      document.getElementById('submitForm').style.display = 'block';
+      document.getElementById('leaderboardView').style.display = 'none';
+    }
+    
+    // Show the leaderboard view
+    function showLeaderboardView() {
+      document.getElementById('submitForm').style.display = 'none';
+      document.getElementById('leaderboardView').style.display = 'block';
+      loadLeaderboard();
+    }
+    
+    // Validate email format
+    function isValidEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // Submit score to leaderboard
+    async function submitLeaderboardScore(event) {
+      // Prevent default form submission if called from a form event
+      if (event) event.preventDefault();
+      
+      const email = document.getElementById('playerEmail').value.trim();
+      const name = document.getElementById('playerName').value.trim();
+      const errorMsg = document.getElementById('errorMessage');
+      
+      // Get score and level from the game
+      const score = window.gameManager ? window.gameManager.score : 0;
+      const level = window.gameManager ? window.gameManager.level : 1;
+      
+      // Validate email
+      if (!email) {
+        errorMsg.textContent = 'Please enter your email address.';
+        return;
+      }
+      
+      if (!isValidEmail(email)) {
+        errorMsg.textContent = 'Please enter a valid email address.';
+        return;
+      }
+      
+      errorMsg.textContent = '';
+      
+      // Submit the score to Supabase
+      const result = await submitScore(email, score, level, name || null);
+      
+      if (result.success) {
+        // Show leaderboard after successful submission
+        showLeaderboardView();
+      } else {
+        errorMsg.textContent = `Error: ${result.error}`;
+      }
+    }
+    
+    // Load leaderboard data
+    async function loadLeaderboard() {
+      const leaderboardContent = document.getElementById('leaderboardContent');
+      leaderboardContent.innerHTML = 'Loading...';
+      
+      const result = await getTopScores(10);
+      
+      if (result.success) {
+        // Create table for leaderboard
+        let tableHtml = `
+          <table class="leaderboard-table">
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Score</th>
+              <th>Level</th>
+            </tr>
+        `;
+        
+        // Populate table rows
+        result.data.forEach((entry, index) => {
+          const displayName = entry.player_name || maskEmail(entry.email);
+          tableHtml += `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${displayName}</td>
+              <td>${entry.score}</td>
+              <td>${entry.level_reached}</td>
+            </tr>
+          `;
+        });
+        
+        tableHtml += '</table>';
+        leaderboardContent.innerHTML = tableHtml;
+      } else {
+        leaderboardContent.innerHTML = `<p class="error-message">Failed to load leaderboard: ${result.error}</p>`;
+      }
+    }
+    
+    // Mask email for privacy (e.g., j***@example.com)
+    function maskEmail(email) {
+      const parts = email.split('@');
+      if (parts.length !== 2) return email;
+      
+      const username = parts[0];
+      const domain = parts[1];
+      
+      let maskedUsername = username;
+      if (username.length > 2) {
+        maskedUsername = username.charAt(0) + '***';
+      }
+      
+      return `${maskedUsername}@${domain}`;
+    }
+  </script>
+  
+  <!-- Mobile controls -->
+  <div id="mobileControls" class="mobile-controls">
+    <button id="leftBtn" class="control-btn left-btn">◀</button>
+    <button id="rightBtn" class="control-btn right-btn">▶</button>
+    <button id="shootBtn" class="control-btn shoot-btn">🔥</button>
+    <button id="restartBtn" class="control-btn restart-btn">↻</button>
+  </div>
+  
+  <!-- Mobile controls toggle for testing -->
+  <div style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+    <button id="toggleMobileControls" style="background: #333; color: white; border: 1px solid #555; padding: 5px; font-size: 12px; cursor: pointer;">
+      Toggle Mobile Controls
+    </button>
+  </div>
+  
+  <!-- Mobile Controls Script -->
+  <script>
+    // Mobile controls detection and setup
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileControls = document.getElementById('mobileControls');
+      const toggleButton = document.getElementById('toggleMobileControls');
+      
+      // Check if we're on a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // For browser testing - allow toggling mobile mode
+      let mobileMode = isMobile;
+      
+      // Show mobile controls if on mobile device
+      if (mobileMode) {
+        enableMobileControls();
+      }
+      
+      // Toggle button for testing
+      toggleButton.addEventListener('click', function() {
+        mobileMode = !mobileMode;
+        if (mobileMode) {
+          enableMobileControls();
+          toggleButton.textContent = 'Disable Mobile Controls';
+        } else {
+          disableMobileControls();
+          toggleButton.textContent = 'Enable Mobile Controls';
+        }
+      });
+      
+      function enableMobileControls() {
+        mobileControls.style.display = 'block';
+        document.body.classList.add('mobile-mode');
+        setupMobileControlHandlers();
+      }
+      
+      function disableMobileControls() {
+        mobileControls.style.display = 'none';
+        document.body.classList.remove('mobile-mode');
+      }
+      
+      function setupMobileControlHandlers() {
+        console.log('Setting up mobile control handlers');
+        // Clear any existing event listeners to prevent duplicates
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const shootBtn = document.getElementById('shootBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        // Use both mouse and touch events for testing in browser
+        const startEvents = ['mousedown', 'touchstart'];
+        const endEvents = ['mouseup', 'touchend', 'touchcancel'];
+        
+        // Ensure we clean up old event listeners
+        const newLeftBtn = leftBtn.cloneNode(true);
+        leftBtn.parentNode.replaceChild(newLeftBtn, leftBtn);
+        
+        const newRightBtn = rightBtn.cloneNode(true);
+        rightBtn.parentNode.replaceChild(newRightBtn, rightBtn);
+        
+        const newShootBtn = shootBtn.cloneNode(true);
+        shootBtn.parentNode.replaceChild(newShootBtn, shootBtn);
+        
+        const newRestartBtn = restartBtn.cloneNode(true);
+        restartBtn.parentNode.replaceChild(newRestartBtn, restartBtn);
+        
+        // Left button handlers
+        startEvents.forEach(event => {
+          newLeftBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Left button pressed');
+            if (window.gameManager && window.gameManager.player) {
+              console.log('Setting player moving left');
+              window.gameManager.player.movingLeft = true;
+              window.gameManager.player.movingRight = false;
+            } else {
+              console.warn('Game manager or player not available for left button', window.gameManager);
+            }
+          });
+        });
+        
+        endEvents.forEach(event => {
+          newLeftBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Left button released');
+            if (window.gameManager && window.gameManager.player) {
+              window.gameManager.player.movingLeft = false;
+            }
+          });
+        });
+        
+        // Right button handlers
+        startEvents.forEach(event => {
+          newRightBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Right button pressed');
+            if (window.gameManager && window.gameManager.player) {
+              console.log('Setting player moving right');
+              window.gameManager.player.movingRight = true;
+              window.gameManager.player.movingLeft = false;
+            } else {
+              console.warn('Game manager or player not available for right button', window.gameManager);
+            }
+          });
+        });
+        
+        endEvents.forEach(event => {
+          newRightBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Right button released');
+            if (window.gameManager && window.gameManager.player) {
+              window.gameManager.player.movingRight = false;
+            }
+          });
+        });
+        
+        // Shoot button handlers
+        startEvents.forEach(event => {
+          newShootBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Shoot button pressed');
+            if (window.gameManager && window.gameManager.player) {
+              console.log('Player shooting');
+              window.gameManager.player.shoot();
+            } else {
+              console.warn('Game manager or player not available for shoot button', window.gameManager);
+            }
+          });
+        });
+        
+        // Restart button handlers
+        startEvents.forEach(event => {
+          newRestartBtn.addEventListener(event, function(e) {
+            e.preventDefault();
+            console.log('Restart button pressed');
+            if (window.gameManager && window.gameManager.gameIsOver) {
+              console.log('Restarting game');
+              restartGame();
+            } else {
+              console.warn('Game not over or game manager not available', window.gameManager);
+            }
+          });
+        });
+      }
+      
+      // Make gameManager globally accessible to the controls immediately
+      // and ensure setupMobileControlHandlers is called once everything is ready
+      const checkGameManagerInterval = setInterval(function() {
+        if (typeof gameManager !== 'undefined') {
+          console.log('Game manager found, making it global');
+          window.gameManager = gameManager;
+          if (mobileMode) {
+            setupMobileControlHandlers();
+          }
+          clearInterval(checkGameManagerInterval);
+        }
+      }, 300);
+      
+      // Show restart button when game is over
+      const checkForGameOver = setInterval(function() {
+        if (window.gameManager && window.gameManager.gameIsOver) {
+          console.log('Game over detected, showing restart button');
+          document.getElementById('restartBtn').style.display = 'block';
+        }
+      }, 1000);
+      
+      // Prevent page scrolling when interacting with the game
+      document.body.addEventListener('touchmove', function(e) {
+        if (e.target.tagName !== 'INPUT') {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Troubleshooting function to help diagnose mobile control issues
+      function troubleshootMobileControls() {
+        console.log('Troubleshooting mobile controls...');
+        console.log('Game manager available:', typeof window.gameManager !== 'undefined');
+        console.log('Player available:', window.gameManager && typeof window.gameManager.player !== 'undefined');
+        
+        if (window.gameManager && window.gameManager.player) {
+          console.log('Player state:', {
+            x: window.gameManager.player.x,
+            y: window.gameManager.player.y,
+            movingLeft: window.gameManager.player.movingLeft,
+            movingRight: window.gameManager.player.movingRight
+          });
+        }
+        
+        // Check control elements
+        console.log('Control elements:', {
+          leftBtn: document.getElementById('leftBtn') !== null,
+          rightBtn: document.getElementById('rightBtn') !== null,
+          shootBtn: document.getElementById('shootBtn') !== null,
+          restartBtn: document.getElementById('restartBtn') !== null
+        });
+        
+        console.log('Mobile mode:', document.body.classList.contains('mobile-mode'));
+        console.log('Controls visible:', getComputedStyle(document.getElementById('mobileControls')).display !== 'none');
+      }
+      
+      // Run troubleshooting after a delay to ensure everything is loaded
+      setTimeout(troubleshootMobileControls, 2000);
+      
+      // Add a button click handler to troubleshoot on demand
+      toggleButton.addEventListener('dblclick', troubleshootMobileControls);
+    });
+  </script>
+</body>
+</html>
